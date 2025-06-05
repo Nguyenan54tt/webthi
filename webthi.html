@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý và Thi Trắc Nghiệm</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+  <div class="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-6">
+    <h1 class="text-2xl font-bold text-center text-indigo-600 mb-4">📚 Quản lý và Thi Trắc Nghiệm</h1>
+
+    <!-- Tabs -->
+    <div class="flex mb-4 rounded-lg overflow-hidden border border-indigo-300">
+      <button id="manageTab" class="flex-1 py-2 text-center font-medium transition-colors duration-300 bg-indigo-500 text-white hover:bg-indigo-600">
+        Quản lý Câu Hỏi
+      </button>
+      <button id="quizTab" class="flex-1 py-2 text-center font-medium transition-colors duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
+        Chế độ Thi
+      </button>
+    </div>
+
+    <!-- Quản lý Câu Hỏi -->
+    <div id="manageSection" class="block">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-blue-600 mb-2">📝 Thêm Câu Hỏi</h2>
+        <div class="grid grid-cols-1 gap-4">
+          <input id="question" type="text" placeholder="Nội dung câu hỏi (hỗ trợ LaTeX, ví dụ: \\(x^2 + 2x + 1 = 0\\))"
+            class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+          <div class="grid grid-cols-2 gap-4">
+            <input id="option1" type="text" placeholder="Đáp án 1 (tùy chọn)"
+              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+            <input id="option2" type="text" placeholder="Đáp án 2 (tùy chọn)"
+              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+            <input id="option3" type="text" placeholder="Đáp án 3 (tùy chọn)"
+              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+            <input id="option4" type="text" placeholder="Đáp án 4 (tùy chọn)"
+              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+          </div>
+          <select id="correctOption" class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all">
+            <option value="">Không chọn</option>
+            <option value="1">Đáp án 1</option>
+            <option value="2">Đáp án 2</option>
+            <option value="3">Đáp án 3</option>
+            <option value="4">Đáp án 4</option>
+          </select>
+          <textarea id="explanation" placeholder="Giải thích đáp án (tùy chọn, hỗ trợ LaTeX)"
+            class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all h-24"></textarea>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button onclick="addQuestion()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+            ➕ Lưu Câu Hỏi
+          </button>
+          <button onclick="exportQuestions()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+            ⬇️ Xuất JSON
+          </button>
+          <input type="file" id="importFile" class="hidden" onchange="importQuestions(event)" />
+          <button onclick="document.getElementById('importFile').click()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+            ⬆️ Nhập JSON
+          </button>
+        </div>
+      </div>
+      <div id="questionList" class="space-y-4"></div>
+    </div>
+
+    <!-- Chế độ Thi -->
+    <div id="quizSection" class="hidden">
+      <div id="quizArea" class="mb-6">
+        <h2 class="text-lg font-semibold text-purple-600 mb-2">🎯 Chế độ Thi</h2>
+        <div id="quizQuestion" class="font-semibold mb-4 text-base text-gray-800"></div>
+        <div id="quizOptions" class="space-y-2"></div>
+        <div id="quizFeedback" class="mt-4 hidden"></div>
+        <div class="flex gap-2 mt-4">
+          <button id="submitAnswer" onclick="submitAnswer()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+            Nộp Đáp Án
+          </button>
+          <button id="nextQuestion" onclick="nextQuestion()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95 hidden">
+            Câu Tiếp Theo
+          </button>
+          <button id="restartQuiz" onclick="startQuiz()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95 hidden">
+            Làm Lại
+          </button>
+        </div>
+      </div>
+      <canvas id="mathCanvas" class="hidden" width="400" height="100"></canvas>
+    </div>
+
+    <script>
+      let questions = JSON.parse(localStorage.getItem("questions")) || [];
+      let currentQuestionIndex = 0;
+      let userAnswers = [];
+      const canvas = document.getElementById("mathCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Tab switching
+      document.getElementById("manageTab").addEventListener("click", () => {
+        document.getElementById("manageSection").classList.remove("hidden");
+        document.getElementById("quizSection").classList.add("hidden");
+        document.getElementById("manageTab").classList.add("bg-indigo-500", "text-white");
+        document.getElementById("manageTab").classList.remove("bg-gray-100", "text-gray-700");
+        document.getElementById("quizTab").classList.add("bg-gray-100", "text-gray-700");
+        document.getElementById("quizTab").classList.remove("bg-indigo-500", "text-white");
+        renderQuestions();
+      });
+
+      document.getElementById("quizTab").addEventListener("click", () => {
+        document.getElementById("quizSection").classList.remove("hidden");
+        document.getElementById("manageSection").classList.add("hidden");
+        document.getElementById("quizTab").classList.add("bg-indigo-500", "text-white");
+        document.getElementById("quizTab").classList.remove("bg-gray-100", "text-gray-700");
+        document.getElementById("manageTab").classList.add("bg-gray-100", "text-gray-700");
+        document.getElementById("manageTab").classList.remove("bg-indigo-500", "text-white");
+        startQuiz();
+      });
+
+      // Math rendering
+      function renderMath() {
+        MathJax.typesetPromise();
+      }
+
+      function drawMathExpression(expression, x, y) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "20px Arial";
+        ctx.fillText(math.parse(expression).toString(), x, y);
+      }
+
+      // Kiểm tra tính hợp lệ của câu hỏi cho chế độ thi
+      function isValidForQuiz(q) {
+        const hasQuestionContent = q.question.trim().length > 0;
+        const hasFourOptions = q.options.length === 4 && q.options.every(opt => opt.trim().length > 0);
+        const hasCorrectOption = q.correctOption && ["1", "2", "3", "4"].includes(q.correctOption);
+        return {
+          isValid: hasQuestionContent && hasFourOptions && hasCorrectOption,
+          reasons: [
+            !hasQuestionContent ? "Thiếu nội dung câu hỏi" : "",
+            !hasFourOptions ? "Cần đủ 4 đáp án không rỗng" : "",
+            !hasCorrectOption ? "Thiếu hoặc đáp án đúng không hợp lệ" : ""
+          ].filter(reason => reason)
+        };
+      }
+
+      // Quản lý Câu Hỏi
+      function renderQuestions() {
+        const questionList = document.getElementById("questionList");
+        questionList.innerHTML = "";
+        questions.forEach((q, index) => {
+          const { isValid, reasons } = isValidForQuiz(q);
+          const div = document.createElement("div");
+          div.className = "bg-white shadow-md rounded-xl p-4 hover:shadow-lg transition-shadow border border-gray-200";
+          div.innerHTML = `
+            <div class="text-base font-medium text-gray-800 mb-2">${index + 1}. ${q.question || "(Chưa có nội dung)"} <span class="text-sm ${isValid ? 'text-green-500' : 'text-red-500'}">(${isValid ? 'Hợp lệ cho thi' : 'Chưa đủ điều kiện thi: ' + reasons.join(", ")})</span></div>
+            <ul class="space-y-1 ml-4 text-sm">
+              ${q.options[0] ? `<li class="${q.correctOption === "1" ? 'text-green-600 font-semibold' : 'text-gray-700'}">${q.options[0]}</li>` : ""}
+              ${q.options[1] ? `<li class="${q.correctOption === "2" ? 'text-green-600 font-semibold' : 'text-gray-700'}">${q.options[1]}</li>` : ""}
+              ${q.options[2] ? `<li class="${q.correctOption === "3" ? 'text-green-600 font-semibold' : 'text-gray-700'}">${q.options[2]}</li>` : ""}
+              ${q.options[3] ? `<li class="${q.correctOption === "4" ? 'text-green-600 font-semibold' : 'text-gray-700'}">${q.options[3]}</li>` : ""}
+              ${!q.options[0] && !q.options[1] && !q.options[2] && !q.options[3] ? "<li class='text-gray-700'>(Chưa có đáp án)</li>" : ""}
+            </ul>
+            ${q.explanation ? `<div class="mt-2 text-sm text-gray-600"><strong>Giải thích:</strong> ${q.explanation}</div>` : "<div class='mt-2 text-sm text-gray-600'>(Chưa có giải thích)</div>"}
+            <div class="flex gap-2 mt-3">
+              <button onclick="editQuestion(${index})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg shadow-md transition-all duration-200 active:scale-95">✏️ Sửa</button>
+              <button onclick="deleteQuestion(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg shadow-md transition-all duration-200 active:scale-95">🗑️ Xoá</button>
+            </div>
+          `;
+          questionList.appendChild(div);
+        });
+        renderMath();
+        localStorage.setItem("questions", JSON.stringify(questions));
+      }
+
+      function addQuestion() {
+        const question = document.getElementById("question").value.trim();
+        const option1 = document.getElementById("option1").value.trim();
+        const option2 = document.getElementById("option2").value.trim();
+        const option3 = document.getElementById("option3").value.trim();
+        const option4 = document.getElementById("option4").value.trim();
+        const correctOption = document.getElementById("correctOption").value;
+        const explanation = document.getElementById("explanation").value.trim();
+
+        if (!question && !option1 && !option2 && !option3 && !option4 && !explanation) {
+          alert("Vui lòng nhập ít nhất một trường (câu hỏi, đáp án hoặc giải thích).");
+          return;
+        }
+
+        const options = [];
+        if (option1) options.push(option1);
+        if (option2) options.push(option2);
+        if (option3) options.push(option3);
+        if (option4) options.push(option4);
+
+        if (correctOption && options.length < parseInt(correctOption)) {
+          alert("Đáp án đúng không hợp lệ. Vui lòng chọn đáp án đúng phù hợp với các đáp án đã nhập.");
+          return;
+        }
+
+        const newQuestion = {
+          question: question || "",
+          options,
+          correctOption: correctOption || "",
+          explanation: explanation || "",
+        };
+
+        questions.push(newQuestion);
+        clearForm();
+        renderQuestions();
+      }
+
+      function clearForm() {
+        document.getElementById("question").value = "";
+        document.getElementById("option1").value = "";
+        document.getElementById("option2").value = "";
+        document.getElementById("option3").value = "";
+        document.getElementById("option4").value = "";
+        document.getElementById("correctOption").value = "";
+        document.getElementById("explanation").value = "";
+      }
+
+      function editQuestion(index) {
+        const q = questions[index];
+        document.getElementById("question").value = q.question;
+        document.getElementById("option1").value = q.options[0] || "";
+        document.getElementById("option2").value = q.options[1] || "";
+        document.getElementById("option3").value = q.options[2] || "";
+        document.getElementById("option4").value = q.options[3] || "";
+        document.getElementById("correctOption").value = q.correctOption || "";
+        document.getElementById("explanation").value = q.explanation;
+        questions.splice(index, 1);
+        renderQuestions();
+      }
+
+      function deleteQuestion(index) {
+        if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
+          questions.splice(index, 1);
+          renderQuestions();
+        }
+      }
+
+      function exportQuestions() {
+        const blob = new Blob([JSON.stringify(questions, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "questions.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function importQuestions(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            if (!Array.isArray(imported)) {
+              alert("File JSON phải là một mảng các câu hỏi.");
+              return;
+            }
+            const validQuestions = imported.filter(q => 
+              q.question !== undefined && 
+              q.options && Array.isArray(q.options) && 
+              q.correctOption !== undefined && 
+              q.explanation !== undefined
+            );
+            questions = questions.concat(validQuestions);
+            alert(`Đã nhập ${validQuestions.length} câu hỏi mới.`);
+            renderQuestions();
+          } catch (err) {
+            alert("Lỗi đọc file JSON: " + err.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // Chế độ Thi
+      function startQuiz() {
+        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        if (validQuestions.length === 0) {
+          document.getElementById("quizArea").innerHTML = "<p class='text-red-500 font-semibold'>Chưa có câu hỏi hợp lệ nào. Cần câu hỏi có nội dung, đủ 4 đáp án không rỗng, và đáp án đúng được chọn.</p>";
+          return;
+        }
+        currentQuestionIndex = 0;
+        userAnswers = [];
+        document.getElementById("submitAnswer").classList.remove("hidden");
+        document.getElementById("nextQuestion").classList.add("hidden");
+        document.getElementById("restartQuiz").classList.add("hidden");
+        displayQuestion();
+      }
+
+      function displayQuestion() {
+        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        const q = validQuestions[currentQuestionIndex];
+        document.getElementById("quizQuestion").innerHTML = `${currentQuestionIndex + 1}. ${q.question}`;
+        const optionsDiv = document.getElementById("quizOptions");
+        optionsDiv.innerHTML = "";
+        q.options.forEach((option, i) => {
+          optionsDiv.innerHTML += `
+            <div class="flex items-center">
+              <input type="radio" name="option" id="opt${i}" value="${i + 1}" class="mr-2 focus:ring-indigo-500">
+              <label for="opt${i}" class="text-gray-700">${option}</label>
+            </div>
+          `;
+        });
+        document.getElementById("quizFeedback").classList.add("hidden");
+        renderMath();
+      }
+
+      function submitAnswer() {
+        const selectedOption = document.querySelector('input[name="option"]:checked');
+        if (!selectedOption) {
+          alert("Vui lòng chọn một đáp án.");
+          return;
+        }
+        const answer = selectedOption.value;
+        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        const q = validQuestions[currentQuestionIndex];
+        userAnswers.push(answer);
+        const feedbackDiv = document.getElementById("quizFeedback");
+        feedbackDiv.classList.remove("hidden");
+        feedbackDiv.classList.add("fade-in");
+        if (answer === q.correctOption) {
+          feedbackDiv.innerHTML = `
+            <p class="text-lg font-semibold mb-2 text-green-600">✅ Chính xác!</p>
+            <p class="bg-green-100 text-green-800 p-2 rounded mb-4">
+              <strong>Giải thích:</strong> ${q.explanation || "(Không có giải thích)"}
+            </p>
+          `;
+        } else {
+          feedbackDiv.innerHTML = `
+            <p class="text-lg font-semibold mb-2 text-red-600">❌ Sai!</p>
+            <p class="bg-red-100 text-red-800 p-2 rounded mb-4">
+              <strong>Đáp án đúng:</strong> ${q.options[parseInt(q.correctOption) - 1]}<br>
+              <strong>Giải thích:</strong> ${q.explanation || "(Không có giải thích)"}
+            </p>
+          `;
+        }
+        document.getElementById("submitAnswer").classList.add("hidden");
+        document.getElementById("nextQuestion").classList.remove("hidden");
+        renderMath();
+      }
+
+      function nextQuestion() {
+        currentQuestionIndex++;
+        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        if (currentQuestionIndex < validQuestions.length) {
+          document.getElementById("submitAnswer").classList.remove("hidden");
+          document.getElementById("nextQuestion").classList.add("hidden");
+          displayQuestion();
+        } else {
+          showResults();
+        }
+      }
+
+      function showResults() {
+        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        let score = 0;
+        validQuestions.forEach((q, i) => {
+          if (userAnswers[i] === q.correctOption) score++;
+        });
+        document.getElementById("quizArea").innerHTML = `
+          <div class="fade-in">
+            <h2 class="text-lg font-semibold text-blue-600 mb-2">🏆 Kết Quả</h2>
+            <p class="text-base text-gray-800">Bạn đã trả lời đúng <span class="font-bold text-green-600">${score}</span>/${validQuestions.length} câu hỏi.</p>
+            <p class="text-base text-gray-800">Tỷ lệ đúng: <span class="font-bold text-green-600">${(score / validQuestions.length * 100).toFixed(2)}%</span></p>
+          </div>
+        `;
+        document.getElementById("restartQuiz").classList.remove("hidden");
+        renderMath();
+      }
+
+      // Khởi tạo câu hỏi mẫu
+      if (questions.length === 0) {
+        questions = [
+          {
+            question: "Tìm nghiệm của phương trình \\(x^2 - 4 = 0\\)",
+            options: ["\\(x = 2, -2\\)", "\\(x = 4, -4\\)", "\\(x = 1, -1\\)", "\\(x = 3, -3\\)"],
+            correctOption: "1",
+            explanation: "Phương trình \\(x^2 - 4 = 0\\) được giải như sau: \\(x^2 = 4\\), nên \\(x = \\pm 2\\)."
+          },
+          {
+            question: "Tính \\(\\int_0^1 x^2 dx\\)",
+            options: ["\\(\\frac{1}{3}\\)", "\\(\\frac{1}{2}\\)", "\\(1\\)", "\\(\\frac{2}{3}\\)"],
+            correctOption: "1",
+            explanation: "Tích phân \\(\\int_0^1 x^2 dx = \\left[\\frac{x^3}{3}\\right]_0^1 = \\frac{1}{3} - 0 = \\frac{1}{3}\\)."
+          },
+          {
+            question: "Công thức tính diện tích hình tròn là gì?",
+            options: ["\\(S = \\pi r^2\\)", "\\(S = 2\\pi r\\)", "\\(S = \\pi r\\)", "\\(S = \\frac{1}{2}\\pi r^2\\)"],
+            correctOption: "1",
+            explanation: "Diện tích hình tròn được tính bằng công thức \\(S = \\pi r^2\\), trong đó \\(r\\) là bán kính."
+          },
+          {
+            question: "Tìm giá trị của \\(\\sin(\\frac{\\pi}{2})\\)",
+            options: ["1", "0", "\\(\\frac{1}{2}\\)", "-1"],
+            correctOption: "1",
+            explanation: "Theo bảng giá trị lượng giác, \\(\\sin(\\frac{\\pi}{2}) = 1\\)."
+          },
+          {
+            question: "Phương trình bậc hai \\(ax^2 + bx + c = 0\\) có nghiệm khi nào?",
+            options: ["\\(\\Delta \\geq 0\\)", "\\(\\Delta < 0\\)", "\\(\\Delta = 0\\)", "\\(\\Delta > 0\\)"],
+            correctOption: "1",
+            explanation: "Phương trình bậc hai có nghiệm khi delta \\(\\Delta = b^2 - 4ac \\geq 0\\)."
+          }
+        ];
+      }
+
+      renderQuestions();
+    </script>
+  </div>
+</body>
+</html>

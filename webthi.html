@@ -7,7 +7,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
   <style>
+    body {
+      background-image: url('https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -15,15 +22,41 @@
     .fade-in {
       animation: fadeIn 0.3s ease-out;
     }
+    .question-card, .folder-card {
+      transition: transform 0.2s ease;
+    }
+    .question-card:hover, .folder-card:hover {
+      transform: scale(1.02);
+    }
+    #progressBar {
+      transition: width 0.3s ease;
+    }
+    #countdown {
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4">
-  <div class="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-6">
-    <h1 class="text-2xl font-bold text-center text-indigo-600 mb-4">📚 Quản lý và Thi Trắc Nghiệm</h1>
+<body class="min-h-screen p-4">
+  <div id="progressBarContainer" class="hidden fixed top-0 left-0 w-full h-2 bg-gray-200">
+    <div id="progressBar" class="h-full bg-amber-500" style="width: 0%"></div>
+  </div>
+  <div id="countdown" class="hidden fixed top-4 right-4 bg-red-600 text-white font-bold text-lg px-4 py-2 rounded-xl shadow-lg">00:30</div>
+  <div class="max-w-5xl mx-auto bg-white/90 backdrop-blur-md shadow-lg rounded-xl p-6">
+    <h1 class="text-3xl font-bold text-center text-amber-800 mb-6" style="font-family: 'Montserrat', sans-serif;">
+      📚 Quản lý và Thi Trắc Nghiệm
+    </h1>
 
     <!-- Tabs -->
-    <div class="flex mb-4 rounded-lg overflow-hidden border border-indigo-300">
-      <button id="manageTab" class="flex-1 py-2 text-center font-medium transition-colors duration-300 bg-indigo-500 text-white hover:bg-indigo-600">
+    <div class="flex mb-4 rounded-xl overflow-hidden border border-amber-300">
+      <button id="folderTab" class="flex-1 py-2 text-center font-medium transition-colors duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
+        📁 Quản lý Thư Mục
+      </button>
+      <button id="manageTab" class="flex-1 py-2 text-center font-medium transition-colors duration-300 bg-amber-600 text-white hover:bg-amber-700">
         Quản lý Câu Hỏi
       </button>
       <button id="quizTab" class="flex-1 py-2 text-center font-medium transition-colors duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
@@ -31,42 +64,67 @@
       </button>
     </div>
 
+    <!-- Quản lý Thư Mục -->
+    <div id="folderSection" class="hidden">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-amber-600 mb-2">📁 Quản lý Thư Mục</h2>
+        <div class="flex gap-2 mb-4">
+          <input id="newFolderName" type="text" placeholder="Tên thư mục mới"
+            class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white" />
+          <button onclick="addFolder()" class="bg-amber-600 text-white hover:bg-amber-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
+            ➕ Tạo Thư Mục
+          </button>
+        </div>
+        <div id="folderList" class="space-y-4"></div>
+      </div>
+    </div>
+
     <!-- Quản lý Câu Hỏi -->
     <div id="manageSection" class="block">
       <div class="mb-6">
-        <h2 class="text-lg font-semibold text-blue-600 mb-2">📝 Thêm Câu Hỏi</h2>
+        <div class="flex items-center gap-4 mb-4">
+          <h2 class="text-lg font-semibold text-amber-600">📝 Thêm Câu Hỏi</h2>
+          <select id="currentFolder" class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white">
+            <option value="">Chọn thư mục</option>
+          </select>
+        </div>
         <div class="grid grid-cols-1 gap-4">
           <input id="question" type="text" placeholder="Nội dung câu hỏi (hỗ trợ LaTeX, ví dụ: \\(x^2 + 2x + 1 = 0\\))"
-            class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+            class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white" />
           <div class="grid grid-cols-2 gap-4">
-            <input id="option1" type="text" placeholder="Đáp án 1 (tùy chọn)"
-              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
-            <input id="option2" type="text" placeholder="Đáp án 2 (tùy chọn)"
-              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
-            <input id="option3" type="text" placeholder="Đáp án 3 (tùy chọn)"
-              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
-            <input id="option4" type="text" placeholder="Đáp án 4 (tùy chọn)"
-              class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all" />
+            <input id="option1" type="text" placeholder="Đáp án 1"
+              class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white" />
+            <input id="option2" type="text" placeholder="Đáp án 2"
+              class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white" />
+            <input id="option3" type="text" placeholder="Đáp án 3"
+              class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white" />
+            <input id="option4" type="text" placeholder="Đáp án 4"
+              class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white" />
           </div>
-          <select id="correctOption" class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all">
-            <option value="">Không chọn</option>
+          <select id="correctOption" class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white">
+            <option value="">Chọn đáp án đúng</option>
             <option value="1">Đáp án 1</option>
             <option value="2">Đáp án 2</option>
             <option value="3">Đáp án 3</option>
             <option value="4">Đáp án 4</option>
           </select>
-          <textarea id="explanation" placeholder="Giải thích đáp án (tùy chọn, hỗ trợ LaTeX)"
-            class="border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none rounded px-3 py-2 shadow-sm transition-all h-24"></textarea>
+          <select id="difficulty" class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white">
+            <option value="easy">Dễ</option>
+            <option value="medium">Trung bình</option>
+            <option value="hard">Khó</option>
+          </select>
+          <textarea id="explanation" placeholder="Giải thích đáp án (hỗ trợ LaTeX)"
+            class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all h-24 bg-white"></textarea>
         </div>
         <div class="flex gap-2 mt-4">
-          <button onclick="addQuestion()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+          <button onclick="addQuestion()" class="bg-amber-600 text-white hover:bg-amber-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
             ➕ Lưu Câu Hỏi
           </button>
-          <button onclick="exportQuestions()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+          <button onclick="exportQuestions()" class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
             ⬇️ Xuất JSON
           </button>
           <input type="file" id="importFile" class="hidden" onchange="importQuestions(event)" />
-          <button onclick="document.getElementById('importFile').click()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
+          <button onclick="document.getElementById('importFile').click()" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
             ⬆️ Nhập JSON
           </button>
         </div>
@@ -77,52 +135,94 @@
     <!-- Chế độ Thi -->
     <div id="quizSection" class="hidden">
       <div id="quizArea" class="mb-6">
-        <h2 class="text-lg font-semibold text-purple-600 mb-2">🎯 Chế độ Thi</h2>
-        <div id="quizQuestion" class="font-semibold mb-4 text-base text-gray-800"></div>
-        <div id="quizOptions" class="space-y-2"></div>
-        <div id="quizFeedback" class="mt-4 hidden"></div>
-        <div class="flex gap-2 mt-4">
-          <button id="submitAnswer" onclick="submitAnswer()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95">
-            Nộp Đáp Án
+        <div id="quizStart" class="flex items-center gap-4 mb-4">
+          <h2 class="text-lg font-semibold text-amber-600">🎯 Chế độ Thi</h2>
+          <select id="quizFolder" class="border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl px-3 py-2 shadow-sm transition-all bg-white">
+            <option value="">Chọn thư mục để thi</option>
+          </select>
+          <button onclick="startQuiz()" class="bg-amber-600 text-white hover:bg-amber-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
+            ▶️ Bắt đầu Thi
           </button>
-          <button id="nextQuestion" onclick="nextQuestion()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95 hidden">
-            Câu Tiếp Theo
-          </button>
-          <button id="restartQuiz" onclick="startQuiz()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 active:scale-95 hidden">
-            Làm Lại
-          </button>
+        </div>
+        <div id="quizContent" class="hidden">
+          <div class="flex flex-col md:flex-row gap-4">
+            <!-- Question Content (Left, 60-70%) -->
+            <div class="w-full md:w-3/5 bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-4">
+              <div id="quizQuestion" class="font-bold mb-4 text-base text-gray-800"></div>
+              <div id="quizOptions" class="space-y-2"></div>
+              <div id="quizFeedback" class="mt-4 hidden"></div>
+              <div class="flex flex-wrap gap-2 mt-4">
+                <button id="prevQuestion" onclick="prevQuestion()" class="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95 hidden">
+                  ⬅️ Câu Trước
+                </button>
+                <button id="submitAnswer" onclick="submitAnswer()" class="bg-amber-600 text-white hover:bg-amber-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95 hidden">
+                  Nộp Đáp Án
+                </button>
+                <button id="retryQuestion" onclick="retryQuestion()" class="border border-gray-500 text-gray-700 hover:bg-gray-200 text-sm px-3 py-1 rounded-xl shadow-md transition-all duration-200 active:scale-95 hidden">
+                  ♻️ Làm lại câu này
+                </button>
+                <button id="nextQuestion" onclick="nextQuestion()" class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95 hidden">
+                  Câu Tiếp Theo
+                </button>
+                <button id="restartQuiz" onclick="restartQuiz()" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95 hidden">
+                  Làm Lại
+                </button>
+                <button id="returnToStart" onclick="returnToQuizStart()" class="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95 hidden">
+                  🔙 Trở Lại
+                </button>
+              </div>
+            </div>
+            <!-- Question Map (Right, 30-40%) -->
+            <div class="w-full md:w-2/5 bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-4">
+              <h3 class="text-lg font-semibold text-amber-600 mb-4">🗺️ Bản đồ câu hỏi</h3>
+              <div id="questionMapGrid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-2"></div>
+            </div>
+          </div>
         </div>
       </div>
       <canvas id="mathCanvas" class="hidden" width="400" height="100"></canvas>
     </div>
 
     <script>
-      let questions = JSON.parse(localStorage.getItem("questions")) || [];
+      let folders = JSON.parse(localStorage.getItem("folders")) || [];
+      let currentFolderId = null;
       let currentQuestionIndex = 0;
       let userAnswers = [];
+      let selectedAnswer = null;
+      let incorrectAnswersHistory = [];
+      let quizTimer = null;
       const canvas = document.getElementById("mathCanvas");
       const ctx = canvas.getContext("2d");
 
       // Tab switching
-      document.getElementById("manageTab").addEventListener("click", () => {
-        document.getElementById("manageSection").classList.remove("hidden");
-        document.getElementById("quizSection").classList.add("hidden");
-        document.getElementById("manageTab").classList.add("bg-indigo-500", "text-white");
-        document.getElementById("manageTab").classList.remove("bg-gray-100", "text-gray-700");
-        document.getElementById("quizTab").classList.add("bg-gray-100", "text-gray-700");
-        document.getElementById("quizTab").classList.remove("bg-indigo-500", "text-white");
-        renderQuestions();
-      });
+      function switchTab(tabId) {
+        const sections = ["folderSection", "manageSection", "quizSection"];
+        const tabs = ["folderTab", "manageTab", "quizTab"];
+        sections.forEach(section => document.getElementById(section).classList.add("hidden"));
+        tabs.forEach(tab => {
+          document.getElementById(tab).classList.add("bg-gray-100", "text-gray-700");
+          document.getElementById(tab).classList.remove("bg-amber-600", "text-white");
+        });
+        document.getElementById(`${tabId}Section`).classList.remove("hidden");
+        document.getElementById(`${tabId}Tab`).classList.add("bg-amber-600", "text-white");
+        document.getElementById(`${tabId}Tab`).classList.remove("bg-gray-100", "text-gray-700");
+        document.getElementById("progressBarContainer").classList.add("hidden");
+        document.getElementById("countdown").classList.add("hidden");
+        clearInterval(quizTimer);
+        if (tabId === "folder") renderFolders();
+        if (tabId === "manage") {
+          renderFolderSelect();
+          renderQuestions();
+        }
+        if (tabId === "quiz") {
+          renderQuizFolderSelect();
+          resetQuizInterface();
+        }
+      }
 
-      document.getElementById("quizTab").addEventListener("click", () => {
-        document.getElementById("quizSection").classList.remove("hidden");
-        document.getElementById("manageSection").classList.add("hidden");
-        document.getElementById("quizTab").classList.add("bg-indigo-500", "text-white");
-        document.getElementById("quizTab").classList.remove("bg-gray-100", "text-gray-700");
-        document.getElementById("manageTab").classList.add("bg-gray-100", "text-gray-700");
-        document.getElementById("manageTab").classList.remove("bg-indigo-500", "text-white");
-        startQuiz();
-      });
+      document.getElementById("folderTab").addEventListener("click", () => switchTab("folder"));
+      document.getElementById("manageTab").addEventListener("click", () => switchTab("manage"));
+      document.getElementById("quizTab").addEventListener("click", () => switchTab("quiz"));
 
       // Math rendering
       function renderMath() {
@@ -133,6 +233,119 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.font = "20px Arial";
         ctx.fillText(math.parse(expression).toString(), x, y);
+      }
+
+      // Render Question Map
+      function renderQuestionMap() {
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder ? folder.questions.filter(q => isValidForQuiz(q).isValid) : [];
+        const mapGrid = document.getElementById("questionMapGrid");
+        mapGrid.innerHTML = '';
+        validQuestions.forEach((q, index) => {
+          const status = userAnswers[index] === null ? 'unanswered' : userAnswers[index] === q.correctOption ? 'correct' : 'incorrect';
+          const bgColor = index === currentQuestionIndex ? 'bg-blue-600' : status === 'correct' ? 'bg-green-500' : status === 'incorrect' ? 'bg-red-500' : 'bg-gray-200';
+          const button = document.createElement('button');
+          button.className = `w-8 h-8 flex items-center justify-center rounded-md text-white font-medium text-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 ${bgColor}`;
+          button.textContent = index + 1;
+          button.title = `Câu ${index + 1}: ${status === 'unanswered' ? 'Chưa trả lời' : status === 'correct' ? 'Đúng' : 'Sai'}`;
+          button.addEventListener('click', () => goToQuestion(index));
+          mapGrid.appendChild(button);
+        });
+      }
+
+      // Navigate to a specific question
+      function goToQuestion(index) {
+        selectedAnswer = userAnswers[index];
+        currentQuestionIndex = index;
+        displayQuestion();
+      }
+
+      // Retry Question
+      function retryQuestion() {
+        userAnswers[currentQuestionIndex] = null;
+        selectedAnswer = null;
+        displayQuestion();
+      }
+
+      // Quản lý Thư Mục
+      function renderFolders() {
+        const folderList = document.getElementById("folderList");
+        folderList.innerHTML = "";
+        folders.forEach(folder => {
+          const div = document.createElement("div");
+          div.className = "folder-card bg-white shadow-lg rounded-xl p-4 border border-gray-200 flex items-center justify-between";
+          div.innerHTML = `
+            <span class="text-base font-semibold text-gray-800">${folder.name}</span>
+            <div class="flex gap-2">
+              <button onclick="openFolder('${folder.id}')" class="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1 rounded-xl shadow-md transition-all duration-200 active:scale-95">📂 Mở</button>
+              <button onclick="renameFolder('${folder.id}')" class="bg-yellow-600 text-white hover:bg-yellow-700 px-3 py-1 rounded-xl shadow-md transition-all duration-200 active:scale-95">✏️ Đổi tên</button>
+              <button onclick="deleteFolder('${folder.id}')" class="bg-red-600 text-white hover:bg-red-700 px-3 py-1 rounded-xl shadow-md transition-all duration-200 active:scale-95">🗑️ Xóa</button>
+            </div>
+          `;
+          folderList.appendChild(div);
+        });
+        localStorage.setItem("folders", JSON.stringify(folders));
+      }
+
+      function addFolder() {
+        const name = document.getElementById("newFolderName").value.trim();
+        if (!name) {
+          alert("Vui lòng nhập tên thư mục.");
+          return;
+        }
+        const id = crypto.randomUUID();
+        folders.push({ id, name, questions: [] });
+        document.getElementById("newFolderName").value = "";
+        renderFolders();
+      }
+
+      function renameFolder(folderId) {
+        const newName = prompt("Nhập tên mới cho thư mục:");
+        if (newName && newName.trim()) {
+          const folder = folders.find(f => f.id === folderId);
+          if (folder) {
+            folder.name = newName.trim();
+            renderFolders();
+          }
+        }
+      }
+
+      function deleteFolder(folderId) {
+        if (confirm("Bạn có chắc muốn xóa thư mục này và tất cả câu hỏi trong đó?")) {
+          folders = folders.filter(f => f.id !== folderId);
+          if (currentFolderId === folderId) currentFolderId = null;
+          renderFolders();
+          renderFolderSelect();
+          renderQuizFolderSelect();
+        }
+      }
+
+      function openFolder(folderId) {
+        currentFolderId = folderId;
+        switchTab("manage");
+      }
+
+      function renderFolderSelect() {
+        const select = document.getElementById("currentFolder");
+        select.innerHTML = '<option value="">Chọn thư mục</option>';
+        folders.forEach(folder => {
+          const option = document.createElement("option");
+          option.value = folder.id;
+          option.textContent = folder.name;
+          if (folder.id === currentFolderId) option.selected = true;
+          select.appendChild(option);
+        });
+      }
+
+      function renderQuizFolderSelect() {
+        const select = document.getElementById("quizFolder");
+        select.innerHTML = '<option value="">Chọn thư mục để thi</option>';
+        folders.forEach(folder => {
+          const option = document.createElement("option");
+          option.value = folder.id;
+          option.textContent = folder.name;
+          select.appendChild(option);
+        });
       }
 
       // Kiểm tra tính hợp lệ của câu hỏi cho chế độ thi
@@ -152,14 +365,19 @@
 
       // Quản lý Câu Hỏi
       function renderQuestions() {
+        if (!currentFolderId) {
+          document.getElementById("questionList").innerHTML = "<p class='text-gray-600'>Vui lòng chọn một thư mục để quản lý câu hỏi.</p>";
+          return;
+        }
+        const folder = folders.find(f => f.id === currentFolderId);
         const questionList = document.getElementById("questionList");
         questionList.innerHTML = "";
-        questions.forEach((q, index) => {
+        folder.questions.forEach((q, index) => {
           const { isValid, reasons } = isValidForQuiz(q);
           const div = document.createElement("div");
-          div.className = "bg-white shadow-md rounded-xl p-4 hover:shadow-lg transition-shadow border border-gray-200";
+          div.className = "question-card bg-white shadow-lg rounded-xl p-4 border border-gray-200";
           div.innerHTML = `
-            <div class="text-base font-medium text-gray-800 mb-2">${index + 1}. ${q.question || "(Chưa có nội dung)"} <span class="text-sm ${isValid ? 'text-green-500' : 'text-red-500'}">(${isValid ? 'Hợp lệ cho thi' : 'Chưa đủ điều kiện thi: ' + reasons.join(", ")})</span></div>
+            <div class="text-base font-bold text-gray-800 mb-2">${index + 1}. ${q.question || "(Chưa có nội dung)"} <span class="text-sm ${isValid ? 'text-green-600' : 'text-red-500'}">(${isValid ? 'Hợp lệ cho thi' : 'Chưa đủ điều kiện thi: ' + reasons.join(", ")})</span> <span class="text-sm text-amber-600">[${q.difficulty === 'easy' ? 'Dễ' : q.difficulty === 'medium' ? 'Trung bình' : 'Khó'}]</span></div>
             <ul class="space-y-1 ml-4 text-sm">
               ${q.options[0] ? `<li class="${q.correctOption === "1" ? 'text-green-600 font-semibold' : 'text-gray-700'}">${q.options[0]}</li>` : ""}
               ${q.options[1] ? `<li class="${q.correctOption === "2" ? 'text-green-600 font-semibold' : 'text-gray-700'}">${q.options[1]}</li>` : ""}
@@ -169,23 +387,28 @@
             </ul>
             ${q.explanation ? `<div class="mt-2 text-sm text-gray-600"><strong>Giải thích:</strong> ${q.explanation}</div>` : "<div class='mt-2 text-sm text-gray-600'>(Chưa có giải thích)</div>"}
             <div class="flex gap-2 mt-3">
-              <button onclick="editQuestion(${index})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg shadow-md transition-all duration-200 active:scale-95">✏️ Sửa</button>
-              <button onclick="deleteQuestion(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg shadow-md transition-all duration-200 active:scale-95">🗑️ Xoá</button>
+              <button onclick="editQuestion(${index})" class="bg-yellow-600 text-white hover:bg-yellow-700 px-3 py-1 rounded-xl shadow-md transition-all duration-200 active:scale-95">✏️ Sửa</button>
+              <button onclick="deleteQuestion(${index})" class="bg-red-600 text-white hover:bg-red-700 px-3 py-1 rounded-xl shadow-md transition-all duration-200 active:scale-95">🗑️ Xóa</button>
             </div>
           `;
           questionList.appendChild(div);
         });
         renderMath();
-        localStorage.setItem("questions", JSON.stringify(questions));
+        localStorage.setItem("folders", JSON.stringify(folders));
       }
 
       function addQuestion() {
+        if (!currentFolderId) {
+          alert("Vui lòng chọn một thư mục trước khi thêm câu hỏi.");
+          return;
+        }
         const question = document.getElementById("question").value.trim();
         const option1 = document.getElementById("option1").value.trim();
         const option2 = document.getElementById("option2").value.trim();
         const option3 = document.getElementById("option3").value.trim();
         const option4 = document.getElementById("option4").value.trim();
         const correctOption = document.getElementById("correctOption").value;
+        const difficulty = document.getElementById("difficulty").value;
         const explanation = document.getElementById("explanation").value.trim();
 
         if (!question && !option1 && !option2 && !option3 && !option4 && !explanation) {
@@ -208,10 +431,12 @@
           question: question || "",
           options,
           correctOption: correctOption || "",
+          difficulty: difficulty || "easy",
           explanation: explanation || "",
         };
 
-        questions.push(newQuestion);
+        const folder = folders.find(f => f.id === currentFolderId);
+        folder.questions.push(newQuestion);
         clearForm();
         renderQuestions();
       }
@@ -223,40 +448,53 @@
         document.getElementById("option3").value = "";
         document.getElementById("option4").value = "";
         document.getElementById("correctOption").value = "";
+        document.getElementById("difficulty").value = "easy";
         document.getElementById("explanation").value = "";
       }
 
       function editQuestion(index) {
-        const q = questions[index];
+        const folder = folders.find(f => f.id === currentFolderId);
+        const q = folder.questions[index];
         document.getElementById("question").value = q.question;
         document.getElementById("option1").value = q.options[0] || "";
         document.getElementById("option2").value = q.options[1] || "";
         document.getElementById("option3").value = q.options[2] || "";
         document.getElementById("option4").value = q.options[3] || "";
         document.getElementById("correctOption").value = q.correctOption || "";
+        document.getElementById("difficulty").value = q.difficulty;
         document.getElementById("explanation").value = q.explanation;
-        questions.splice(index, 1);
+        folder.questions.splice(index, 1);
         renderQuestions();
       }
 
       function deleteQuestion(index) {
         if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
-          questions.splice(index, 1);
+          const folder = folders.find(f => f.id === currentFolderId);
+          folder.questions.splice(index, 1);
           renderQuestions();
         }
       }
 
       function exportQuestions() {
-        const blob = new Blob([JSON.stringify(questions, null, 2)], { type: "application/json" });
+        if (!currentFolderId) {
+          alert("Vui lòng chọn một thư mục để xuất câu hỏi.");
+          return;
+        }
+        const folder = folders.find(f => f.id === currentFolderId);
+        const blob = new Blob([JSON.stringify(folder.questions, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "questions.json";
+        a.download = `${folder.name}_questions.json`;
         a.click();
         URL.revokeObjectURL(url);
       }
 
       function importQuestions(event) {
+        if (!currentFolderId) {
+          alert("Vui lòng chọn một thư mục để nhập câu hỏi.");
+          return;
+        }
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
@@ -271,9 +509,11 @@
               q.question !== undefined && 
               q.options && Array.isArray(q.options) && 
               q.correctOption !== undefined && 
-              q.explanation !== undefined
+              q.explanation !== undefined &&
+              ["easy", "medium", "hard"].includes(q.difficulty)
             );
-            questions = questions.concat(validQuestions);
+            const folder = folders.find(f => f.id === currentFolderId);
+            folder.questions = folder.questions.concat(validQuestions);
             alert(`Đã nhập ${validQuestions.length} câu hỏi mới.`);
             renderQuestions();
           } catch (err) {
@@ -284,48 +524,140 @@
       }
 
       // Chế độ Thi
-      function startQuiz() {
-        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+      function resetQuizInterface() {
+        document.getElementById("quizStart").classList.remove("hidden");
+        document.getElementById("quizContent").classList.add("hidden");
+        document.getElementById("quizFolder").value = "";
+        currentFolderId = null;
+        userAnswers = [];
+        selectedAnswer = null;
+        incorrectAnswersHistory = [];
+        currentQuestionIndex = 0;
+        clearInterval(quizTimer);
+        document.getElementById("progressBarContainer").classList.add("hidden");
+        document.getElementById("countdown").classList.add("hidden");
+      }
+
+      function returnToQuizStart() {
+        resetQuizInterface();
+        renderQuizFolderSelect();
+      }
+
+      function startQuiz(resetAnswers = true) {
+        const folderId = document.getElementById("quizFolder").value;
+        if (!folderId) {
+          alert("Vui lòng chọn một thư mục để bắt đầu thi.");
+          return;
+        }
+        currentFolderId = folderId;
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder.questions.filter(q => isValidForQuiz(q).isValid);
         if (validQuestions.length === 0) {
-          document.getElementById("quizArea").innerHTML = "<p class='text-red-500 font-semibold'>Chưa có câu hỏi hợp lệ nào. Cần câu hỏi có nội dung, đủ 4 đáp án không rỗng, và đáp án đúng được chọn.</p>";
+          document.getElementById("quizArea").innerHTML = "<p class='text-red-500 font-semibold'>Chưa có câu hỏi hợp lệ nào trong thư mục này. Cần câu hỏi có nội dung, đủ 4 đáp án không rỗng, và đáp án đúng được chọn.</p>";
           return;
         }
         currentQuestionIndex = 0;
-        userAnswers = [];
+        if (resetAnswers) {
+          userAnswers = new Array(validQuestions.length).fill(null);
+          incorrectAnswersHistory = [];
+        }
+        selectedAnswer = userAnswers[0];
+        document.getElementById("quizStart").classList.add("hidden");
+        document.getElementById("quizContent").classList.remove("hidden");
         document.getElementById("submitAnswer").classList.remove("hidden");
         document.getElementById("nextQuestion").classList.add("hidden");
+        document.getElementById("prevQuestion").classList.add("hidden");
         document.getElementById("restartQuiz").classList.add("hidden");
+        document.getElementById("returnToStart").classList.add("hidden");
+        document.getElementById("retryQuestion").classList.add("hidden");
+        document.getElementById("progressBarContainer").classList.remove("hidden");
+        document.getElementById("countdown").classList.remove("hidden");
+        startTimer();
+        updateProgressBar();
         displayQuestion();
+        renderQuestionMap();
+      }
+
+      function restartQuiz() {
+        incorrectAnswersHistory = [];
+        startQuiz(true);
+      }
+
+      function startTimer() {
+        let timeLeft = 30;
+        document.getElementById("countdown").textContent = `00:${timeLeft.toString().padStart(2, '0')}`;
+        quizTimer = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            clearInterval(quizTimer);
+            submitAnswer();
+          }
+          document.getElementById("countdown").textContent = `00:${timeLeft.toString().padStart(2, '0')}`;
+        }, 1000);
+      }
+
+      function updateProgressBar() {
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder.questions.filter(q => isValidForQuiz(q).isValid);
+        const progress = ((currentQuestionIndex + 1) / validQuestions.length) * 100;
+        document.getElementById("progressBar").style.width = `${progress}%`;
       }
 
       function displayQuestion() {
-        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder.questions.filter(q => isValidForQuiz(q).isValid);
         const q = validQuestions[currentQuestionIndex];
-        document.getElementById("quizQuestion").innerHTML = `${currentQuestionIndex + 1}. ${q.question}`;
+        document.getElementById("quizQuestion").innerHTML = `${currentQuestionIndex + 1}. ${q.question} <span class="text-sm text-amber-600">[${q.difficulty === 'easy' ? 'Dễ' : q.difficulty === 'medium' ? 'Trung bình' : 'Khó'}]</span>`;
         const optionsDiv = document.getElementById("quizOptions");
         optionsDiv.innerHTML = "";
         q.options.forEach((option, i) => {
+          const value = `${i + 1}`;
+          const isSelected = selectedAnswer === value;
+          const isSubmitted = userAnswers[currentQuestionIndex] !== null;
           optionsDiv.innerHTML += `
             <div class="flex items-center">
-              <input type="radio" name="option" id="opt${i}" value="${i + 1}" class="mr-2 focus:ring-indigo-500">
-              <label for="opt${i}" class="text-gray-700">${option}</label>
+              <div
+                class="w-full p-2 border border-gray-300 rounded-md text-gray-700 cursor-pointer transition-all duration-200 hover:bg-amber-100 ${isSelected ? 'bg-amber-200 border-amber-500' : ''} ${isSubmitted ? 'pointer-events-none opacity-50' : ''}"
+                onclick="selectAnswer('${value}')"
+              >
+                ${option}
+              </div>
             </div>
           `;
         });
-        document.getElementById("quizFeedback").classList.add("hidden");
+        document.getElementById("quizFeedback").classList.toggle("hidden", userAnswers[currentQuestionIndex] === null);
+        document.getElementById("prevQuestion").classList.toggle("hidden", currentQuestionIndex === 0);
+        document.getElementById("nextQuestion").classList.toggle("hidden", currentQuestionIndex >= validQuestions.length - 1 || userAnswers[currentQuestionIndex] === null);
+        document.getElementById("submitAnswer").classList.toggle("hidden", userAnswers[currentQuestionIndex] !== null || selectedAnswer === null);
+        document.getElementById("retryQuestion").classList.toggle("hidden", userAnswers[currentQuestionIndex] === null);
+        clearInterval(quizTimer);
+        startTimer();
+        updateProgressBar();
+        renderQuestionMap();
         renderMath();
       }
 
+      function selectAnswer(value) {
+        if (userAnswers[currentQuestionIndex] !== null) return; // Prevent selection if submitted
+        if (selectedAnswer === value) {
+          selectedAnswer = null; // Deselect if already selected
+        } else {
+          selectedAnswer = value; // Select new answer
+        }
+        displayQuestion();
+      }
+
       function submitAnswer() {
-        const selectedOption = document.querySelector('input[name="option"]:checked');
-        if (!selectedOption) {
+        if (selectedAnswer === null) {
           alert("Vui lòng chọn một đáp án.");
           return;
         }
-        const answer = selectedOption.value;
-        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
+        const answer = selectedAnswer;
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder.questions.filter(q => isValidForQuiz(q).isValid);
         const q = validQuestions[currentQuestionIndex];
-        userAnswers.push(answer);
+        userAnswers[currentQuestionIndex] = answer;
+        selectedAnswer = null;
         const feedbackDiv = document.getElementById("quizFeedback");
         feedbackDiv.classList.remove("hidden");
         feedbackDiv.classList.add("fade-in");
@@ -346,16 +678,27 @@
           `;
         }
         document.getElementById("submitAnswer").classList.add("hidden");
+        document.getElementById("retryQuestion").classList.remove("hidden");
         document.getElementById("nextQuestion").classList.remove("hidden");
+        clearInterval(quizTimer);
+        renderQuestionMap();
         renderMath();
       }
 
+      function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+          selectedAnswer = userAnswers[currentQuestionIndex - 1];
+          currentQuestionIndex--;
+          displayQuestion();
+        }
+      }
+
       function nextQuestion() {
-        currentQuestionIndex++;
-        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
-        if (currentQuestionIndex < validQuestions.length) {
-          document.getElementById("submitAnswer").classList.remove("hidden");
-          document.getElementById("nextQuestion").classList.add("hidden");
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder.questions.filter(q => isValidForQuiz(q).isValid);
+        if (currentQuestionIndex < validQuestions.length - 1) {
+          selectedAnswer = userAnswers[currentQuestionIndex + 1];
+          currentQuestionIndex++;
           displayQuestion();
         } else {
           showResults();
@@ -363,59 +706,117 @@
       }
 
       function showResults() {
-        const validQuestions = questions.filter(q => isValidForQuiz(q).isValid);
-        let score = 0;
+        const folder = folders.find(f => f.id === currentFolderId);
+        const validQuestions = folder.questions.filter(q => isValidForQuiz(q).isValid);
+        let correctCount = 0;
+        incorrectAnswersHistory = [];
         validQuestions.forEach((q, i) => {
-          if (userAnswers[i] === q.correctOption) score++;
+          if (userAnswers[i] === q.correctOption) {
+            correctCount++;
+          } else if (userAnswers[i] !== null) {
+            incorrectAnswersHistory.push({
+              questionNumber: i + 1,
+              question: q.question,
+              userAnswer: q.options[parseInt(userAnswers[i]) - 1],
+              correctAnswer: q.options[parseInt(q.correctOption) - 1],
+              explanation: q.explanation || "(Không có giải thích)"
+            });
+          }
         });
-        document.getElementById("quizArea").innerHTML = `
+        const incorrectCount = incorrectAnswersHistory.length;
+        let incorrectAnswersHTML = '';
+        if (incorrectAnswersHistory.length > 0) {
+          incorrectAnswersHTML = `
+            <h3 class="text-lg font-semibold text-red-600 mt-6 mb-4">📝 Xem lại các câu sai</h3>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+              ${incorrectAnswersHistory.map(item => `
+                <div class="p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <p class="font-bold text-gray-800">Câu ${item.questionNumber}: ${item.question}</p>
+                  <p class="text-sm text-red-600 mt-1"><strong>Đáp án bạn chọn:</strong> ${item.userAnswer}</p>
+                  <p class="text-sm text-green-600 mt-1"><strong>Đáp án đúng:</strong> ${item.correctAnswer}</p>
+                  <p class="text-sm text-gray-600 mt-1"><strong>Giải thích:</strong> ${item.explanation}</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          incorrectAnswersHTML = `
+            <h3 class="text-lg font-semibold text-green-600 mt-6 mb-4">🎉 Không có câu sai!</h3>
+            <p class="text-gray-600">Bạn đã trả lời đúng tất cả các câu hỏi.</p>
+          `;
+        }
+        document.getElementById("quizContent").innerHTML = `
           <div class="fade-in">
-            <h2 class="text-lg font-semibold text-blue-600 mb-2">🏆 Kết Quả</h2>
-            <p class="text-base text-gray-800">Bạn đã trả lời đúng <span class="font-bold text-green-600">${score}</span>/${validQuestions.length} câu hỏi.</p>
-            <p class="text-base text-gray-800">Tỷ lệ đúng: <span class="font-bold text-green-600">${(score / validQuestions.length * 100).toFixed(2)}%</span></p>
+            <h2 class="text-lg font-semibold text-amber-600 mb-2">🏆 Kết Quả</h2>
+            <p class="text-base text-gray-800">Bạn đã trả lời đúng <span class="font-bold text-green-600">${correctCount}</span>/${validQuestions.length} câu hỏi.</p>
+            <p class="text-base text-gray-800">Số câu sai: <span class="font-bold text-red-600">${incorrectCount}</span></p>
+            <p class="text-base text-gray-800">Tỷ lệ đúng: <span class="font-bold text-green-600">${(correctCount / validQuestions.length * 100).toFixed(2)}%</span></p>
+            <div class="flex gap-2 mt-4">
+              <button id="restartQuiz" onclick="restartQuiz()" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
+                Làm Lại
+              </button>
+              <button id="returnToStart" onclick="returnToQuizStart()" class="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded-xl shadow-md transition-all duration-200 active:scale-95">
+                🔙 Trở Lại
+              </button>
+            </div>
+            ${incorrectAnswersHTML}
           </div>
         `;
         document.getElementById("restartQuiz").classList.remove("hidden");
+        document.getElementById("returnToStart").classList.remove("hidden");
+        document.getElementById("progressBarContainer").classList.add("hidden");
+        document.getElementById("countdown").classList.add("hidden");
+        clearInterval(quizTimer);
         renderMath();
       }
 
-      // Khởi tạo câu hỏi mẫu
-      if (questions.length === 0) {
-        questions = [
-          {
-            question: "Tìm nghiệm của phương trình \\(x^2 - 4 = 0\\)",
-            options: ["\\(x = 2, -2\\)", "\\(x = 4, -4\\)", "\\(x = 1, -1\\)", "\\(x = 3, -3\\)"],
-            correctOption: "1",
-            explanation: "Phương trình \\(x^2 - 4 = 0\\) được giải như sau: \\(x^2 = 4\\), nên \\(x = \\pm 2\\)."
-          },
-          {
-            question: "Tính \\(\\int_0^1 x^2 dx\\)",
-            options: ["\\(\\frac{1}{3}\\)", "\\(\\frac{1}{2}\\)", "\\(1\\)", "\\(\\frac{2}{3}\\)"],
-            correctOption: "1",
-            explanation: "Tích phân \\(\\int_0^1 x^2 dx = \\left[\\frac{x^3}{3}\\right]_0^1 = \\frac{1}{3} - 0 = \\frac{1}{3}\\)."
-          },
-          {
-            question: "Công thức tính diện tích hình tròn là gì?",
-            options: ["\\(S = \\pi r^2\\)", "\\(S = 2\\pi r\\)", "\\(S = \\pi r\\)", "\\(S = \\frac{1}{2}\\pi r^2\\)"],
-            correctOption: "1",
-            explanation: "Diện tích hình tròn được tính bằng công thức \\(S = \\pi r^2\\), trong đó \\(r\\) là bán kính."
-          },
-          {
-            question: "Tìm giá trị của \\(\\sin(\\frac{\\pi}{2})\\)",
-            options: ["1", "0", "\\(\\frac{1}{2}\\)", "-1"],
-            correctOption: "1",
-            explanation: "Theo bảng giá trị lượng giác, \\(\\sin(\\frac{\\pi}{2}) = 1\\)."
-          },
-          {
-            question: "Phương trình bậc hai \\(ax^2 + bx + c = 0\\) có nghiệm khi nào?",
-            options: ["\\(\\Delta \\geq 0\\)", "\\(\\Delta < 0\\)", "\\(\\Delta = 0\\)", "\\(\\Delta > 0\\)"],
-            correctOption: "1",
-            explanation: "Phương trình bậc hai có nghiệm khi delta \\(\\Delta = b^2 - 4ac \\geq 0\\)."
-          }
-        ];
+      // Khởi tạo dữ liệu mẫu
+      if (folders.length === 0) {
+        const folderId = crypto.randomUUID();
+        folders = [{
+          id: folderId,
+          name: "Toán Học Cơ Bản",
+          questions: [
+            {
+              question: "Tìm nghiệm của phương trình \\(x^2 - 4 = 0\\)",
+              options: ["\\(x = 2, -2\\)", "\\(x = 4, -4\\)", "\\(x = 1, -1\\)", "\\(x = 3, -3\\)"],
+              correctOption: "1",
+              difficulty: "easy",
+              explanation: "Phương trình \\(x^2 - 4 = 0\\) được giải như sau: \\(x^2 = 4\\), nên \\(x = \\pm 2\\)."
+            },
+            {
+              question: "Tính \\(\\int_0^1 x^2 dx\\)",
+              options: ["\\(\\frac{1}{3}\\)", "\\(\\frac{1}{2}\\)", "\\(1\\)", "\\(\\frac{2}{3}\\)"],
+              correctOption: "1",
+              difficulty: "medium",
+              explanation: "Tích phân \\(\\int_0^1 x^2 dx = \\left[\\frac{x^3}{3}\\right]_0^1 = \\frac{1}{3} - 0 = \\frac{1}{3}\\)."
+            },
+            {
+              question: "Công thức tính diện tích hình tròn là gì?",
+              options: ["\\(S = \\pi r^2\\)", "\\(S = 2\\pi r\\)", "\\(S = \\pi r\\)", "\\(S = \\frac{1}{2}\\pi r^2\\)"],
+              correctOption: "1",
+              difficulty: "easy",
+              explanation: "Diện tích hình tròn được tính bằng công thức \\(S = \\pi r^2\\), trong đó \\(r\\) là bán kính."
+            },
+            {
+              question: "Tìm giá trị của \\(\\sin(\\frac{\\pi}{2})\\)",
+              options: ["1", "0", "\\(\\frac{1}{2}\\)", "-1"],
+              correctOption: "1",
+              difficulty: "easy",
+              explanation: "Theo bảng giá trị lượng giác, \\(\\sin(\\frac{\\pi}{2}) = 1\\)."
+            },
+            {
+              question: "Phương trình bậc hai \\(ax^2 + bx + c = 0\\) có nghiệm khi nào?",
+              options: ["\\(\\Delta \\geq 0\\)", "\\(\\Delta < 0\\)", "\\(\\Delta = 0\\)", "\\(\\Delta > 0\\)"],
+              correctOption: "1",
+              difficulty: "hard",
+              explanation: "Phương trình bậc hai có nghiệm khi delta \\(\\Delta = b^2 - 4ac \\geq 0\\)."
+            }
+          ]
+        }];
       }
 
-      renderQuestions();
+      switchTab("manage");
     </script>
   </div>
 </body>
